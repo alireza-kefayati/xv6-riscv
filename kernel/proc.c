@@ -427,6 +427,7 @@ void scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  unsigned long randstate = 1;
 
   for (;;) {
     intr_on();
@@ -436,9 +437,7 @@ void scheduler(void) {
     int min_pr = 101; 
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
-      if(p->state == RUNNABLE && p->priority < min_pr) {
-        min_pr = p->priority;
-      }
+      if(p->state == RUNNABLE && p->priority < min_pr) min_pr = p->priority;
       release(&p->lock);
     }
     for(p = proc; p < &proc[NPROC]; p++) {
@@ -450,6 +449,34 @@ void scheduler(void) {
         c->proc = 0;
       }
       release(&p->lock);
+    }
+#elif defined(SCHEDULER_LOTTERY)
+    extern uint ticks; 
+    long total_tickets = 0;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) total_tickets += p->tickets;
+      release(&p->lock);
+    }
+    if(total_tickets > 0) {
+      randstate = randstate * 1103515245 + 12345 + ticks;
+      long winning_ticket = (randstate >> 16) % total_tickets;
+      long accum = 0;
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if(p->state == RUNNABLE) {
+          accum += p->tickets;
+          if(accum > winning_ticket) {
+            p->state = RUNNING;
+            c->proc = p;
+            swtch(&c->context, &p->context);
+            c->proc = 0;
+            release(&p->lock);
+            break; 
+          }
+        }
+        release(&p->lock);
+      }
     }
 #else
     for (p = proc; p < &proc[NPROC]; p++) {
@@ -734,4 +761,13 @@ int set_priority(int pid, int pr) {
     release(&p->lock);
   }
   return -1;
+}
+
+int set_tickets(int num) {
+  if(num < 1) return -1;
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  p->tickets = num;
+  release(&p->lock);
+  return 0;
 }

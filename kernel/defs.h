@@ -104,6 +104,7 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int             get_pinfo(uint64);
 int             set_priority(int, int);
+int             set_tickets(int);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

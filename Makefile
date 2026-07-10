@@ -87,6 +87,9 @@ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
 CFLAGS += -fno-pie -no-pie
 endif
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
+else ifeq ($(SCHEDULER),LOTTERY)
+	CFLAGS += -DSCHEDULER_LOTTERY
+endif
 CFLAGS += -fno-pie -nopie
 endif
 
@@ -155,6 +158,7 @@ UPROGS=\
         $U/_ps\
         $U/_chpri\
 	$U/_test_prio\
+        $U/_test_lottery\
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
 

@@ -45,4 +45,5 @@ entry("uptime");
 entry("sync");
 entry("getpinfo");
 entry("setpriority");
+entry("settickets");
 
