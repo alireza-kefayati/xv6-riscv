@@ -113,3 +113,9 @@ uint64 sys_getpinfo(void) {
   argaddr(0, &pinfo_ptr);
   return get_pinfo(pinfo_ptr);
 }
+
+uint64 sys_setpriority(void) {
+  int pid, pr;
+  argint(0, &pid); argint(1, &pr);
+  return set_priority(pid, pr);
+}

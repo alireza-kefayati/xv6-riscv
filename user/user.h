@@ -27,6 +27,7 @@ int uptime(void);
 int sync(void);
 struct pinfo;
 int getpinfo(struct pinfo*);
+int setpriority(int, int);
 
 // ulib.c
 int stat(const char *, struct stat *);
