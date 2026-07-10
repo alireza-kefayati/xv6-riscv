@@ -126,6 +126,8 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->priority = 50;
+  p->tickets = 1;
+
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p);
@@ -276,6 +278,7 @@ kfork(void)
     return -1;
   }
   np->sz = p->sz;
+  np->tickets = p->tickets;
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -427,7 +430,6 @@ void scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  unsigned long randstate = 1;
 
   for (;;) {
     intr_on();
@@ -452,6 +454,7 @@ void scheduler(void) {
     }
 #elif defined(SCHEDULER_LOTTERY)
     extern uint ticks; 
+    static unsigned long randstate = 1;
     long total_tickets = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
@@ -771,3 +774,6 @@ int set_tickets(int num) {
   release(&p->lock);
   return 0;
 }
+
+
+

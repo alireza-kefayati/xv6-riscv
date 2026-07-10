@@ -74,12 +74,6 @@ CFLAGS += -fno-builtin-free
 CFLAGS += -fno-builtin-memcpy -Wno-main
 CFLAGS += -fno-builtin-printf -fno-builtin-fprintf -fno-builtin-vprintf
 CFLAGS += -I.
-ifndef SCHEDULER
-	SCHEDULER := DEFAULT
-endif
-ifeq ($(SCHEDULER),PRIORITY)
-	CFLAGS += -DSCHEDULER_PRIORITY
-endif
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -87,10 +81,20 @@ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
 CFLAGS += -fno-pie -no-pie
 endif
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
-else ifeq ($(SCHEDULER),LOTTERY)
-	CFLAGS += -DSCHEDULER_LOTTERY
-endif
 CFLAGS += -fno-pie -nopie
+endif
+
+# Scheduler configuration
+ifndef SCHEDULER
+SCHEDULER := DEFAULT
+endif
+
+ifeq ($(SCHEDULER),PRIORITY)
+CFLAGS += -DSCHEDULER_PRIORITY
+endif
+
+ifeq ($(SCHEDULER),LOTTERY)
+CFLAGS += -DSCHEDULER_LOTTERY
 endif
 
 LDFLAGS = -z max-page-size=4096
@@ -155,10 +159,11 @@ UPROGS=\
 	$U/_forphan\
 	$U/_dorphan\
 	$U/_sync\
-        $U/_ps\
-        $U/_chpri\
+	$U/_ps\
+	$U/_chpri\
 	$U/_test_prio\
-        $U/_test_lottery\
+	$U/_test_lottery\
+
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
 
