@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pinfo.h"
 
 struct cpu cpus[NCPU];
 
@@ -689,4 +690,31 @@ procdump(void)
     printk("%d %s %s", p->pid, state, p->name);
     printk("\n");
   }
+}
+
+
+
+int get_pinfo(uint64 addr) {
+  struct pinfo p_info;
+  struct proc *p;
+  uint64 curr_addr = addr;
+
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state != UNUSED){
+      p_info.pid = p->pid;
+      p_info.state = p->state;
+      p_info.priority = p->priority;
+      p_info.tickets = p->tickets;
+      if(copyout(myproc()->pagetable, curr_addr, (char *)&p_info, sizeof(p_info)) < 0) {
+        release(&p->lock);
+        return -1;
+      }
+      curr_addr += sizeof(p_info);
+    }
+    release(&p->lock);
+  }
+  p_info.pid = 0; 
+  copyout(myproc()->pagetable, curr_addr, (char *)&p_info, sizeof(p_info));
+  return 0;
 }
